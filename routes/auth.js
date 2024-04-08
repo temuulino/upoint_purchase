@@ -11,7 +11,7 @@ const router = express.Router();
  * @swagger
  * /auth/signup:
  *   post:
- *     summary: Register a new user
+ *     summary: Шинээр хэрэглэгч үүсгэх
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -25,17 +25,17 @@ const router = express.Router();
  *             properties:
  *               username:
  *                 type: string
- *                 example: user1
+ *                 example: bold
  *               password:
  *                 type: string
- *                 example: pass1234
+ *                 example: password
  *     responses:
  *       201:
- *         description: User created successfully
+ *         description: Хэрэглэгч амжилттай үүслээ
  *       400:
  *         description: Username already exists
  *       500:
- *         description: Internal server error
+ *         description: Дотоод асуудал
  */
 
 // Бүртгүүлэх
@@ -85,6 +85,45 @@ router.post("/signup", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Log in an existing user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: user1
+ *               password:
+ *                 type: string
+ *                 example: pass1234
+ *     responses:
+ *       200:
+ *         description: Login successful, returns JWT token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxMjM0NTY3ODkwIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyNDI2MjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+ *       401:
+ *         description: Invalid username or password
+ *       500:
+ *         description: Internal server error
+ */
 
 // Нэвтрэх
 router.post("/login", async (req, res) => {
