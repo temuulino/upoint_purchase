@@ -1,14 +1,22 @@
 const mongoose = require("mongoose");
+const bcryptjs = require("bcryptjs");
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   card: {
-    cardNumber: { type: String, required: true, unique: true },
+    cardNumber: { type: String, unique: true },
     balance: { type: Number, required: true },
   },
 });
 
+// Хэрэглэгчийн картын дугаарийг 16 оронтой санамсаргүй тоо байлгах
+userSchema.pre("save", function (next) {
+  if (!this.isModified("card.cardNumber")) return next();
+
+  this.card.cardNumber = generateCardNumber();
+  next();
+});
 // Хэрэглэгчийн password-ийг hash хийх.
 userSchema.pre("save", async function (next) {
   try {
@@ -22,19 +30,12 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// Хэрэглэгчийн картын дугаарийг 16 оронтой санамсаргүй тоо байлгах
-userSchema.pre("save", function (next) {
-  if (!this.isModified("card.cardNumber")) return next();
-
-  this.card.cardNumber = generateCardNumber();
-  next();
-});
-
 function generateCardNumber() {
   let cardNumber = "";
   for (let i = 0; i < 16; i++) {
-    cardNumber += Math.floor(Math.random() * 10);
+    cardNumber += Math.floor(Math.random() * 10).toString();
   }
+  console.log("Generated Card Number:", cardNumber); // Add logging to debug
   return cardNumber;
 }
 

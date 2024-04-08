@@ -3,11 +3,61 @@ require("dotenv").config();
 const express = require("express");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const User = require("../models/models");
+const { User, Item } = require("../models/models");
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /auth/signup:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: user1
+ *               password:
+ *                 type: string
+ *                 example: pass1234
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       400:
+ *         description: Username already exists
+ *       500:
+ *         description: Internal server error
+ */
+
 // Бүртгүүлэх
+// router.post("/signup", async (req, res) => {
+//   try {
+//     const { username, password } = req.body;
+//     const existingUser = await User.findOne({ username });
+
+//     if (existingUser) {
+//       return res.status(400).json({ message: "Username already exists" });
+//     }
+
+//     const hashedPassword = await bcryptjs.hash(password, 10);
+//     const newUser = new User({ username, password: hashedPassword });
+//     await newUser.save();
+
+//     res.status(201).json({ message: "User created successfully" });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// });
 router.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -17,8 +67,16 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ message: "Username already exists" });
     }
 
-    const hashedPassword = await bcryptjs.hash(password, 10);
-    const newUser = new User({ username, password: hashedPassword });
+    const defaultBalance = 100;
+
+    const newUser = new User({
+      username,
+      password,
+      card: {
+        balance: defaultBalance,
+      },
+    });
+
     await newUser.save();
 
     res.status(201).json({ message: "User created successfully" });
