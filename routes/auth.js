@@ -201,12 +201,54 @@ const authenticateToken = (req, res, next) => {
  */
 router.get("/me", authenticateToken, async (req, res) => {
   try {
-    // The user's ID is stored in req.user.userId thanks to the authenticateToken middleware
-    const user = await User.findById(req.user.userId).select("-password"); // Excludes the password from the result
+    const user = await User.findById(req.user.userId).select("-password"); //пасс харагдуулахгүй байх
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
     res.json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+/**
+ * @swagger
+ * /auth/items:
+ *   get:
+ *     summary: Get a list of all items
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of items
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                     example: Example Item Name
+ *                   price:
+ *                     type: number
+ *                     format: float
+ *                     example: 99.99
+ *                   quantity:
+ *                     type: number
+ *                     example: 100
+ *       500:
+ *         description: Internal server error
+ */
+
+router.get("/items", authenticateToken, async (req, res) => {
+  try {
+    const items = await Item.find({});
+    console.log(items);
+    res.json(items);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });

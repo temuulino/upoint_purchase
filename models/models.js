@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const bcryptjs = require("bcryptjs");
+// const faker = require("@faker-js/faker");
+const { faker } = require("@faker-js/faker");
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
@@ -39,10 +41,32 @@ function generateCardNumber() {
   return cardNumber;
 }
 
+// Faker хэрэглэж хуурамч дата хийнэ.
+
 const itemSchema = new mongoose.Schema({
   name: { type: String, required: true },
   price: { type: Number, required: true },
   quantity: { type: Number, required: true },
+});
+
+function generateFakeItem() {
+  return {
+    name: faker.commerce.product(),
+    price: faker.number.int({ min: 100, max: 1000 }),
+    quantity: faker.number.int({ min: 1, max: 100 }),
+  };
+}
+
+const fakeItems = Array.from({ length: 10 }, generateFakeItem);
+
+fakeItems.forEach(async (fakeItemData) => {
+  try {
+    const newItem = new Item(fakeItemData);
+    await newItem.save();
+    console.log("Fake item saved:", newItem);
+  } catch (error) {
+    console.error("Error saving fake item:", error);
+  }
 });
 
 const User = mongoose.model("User", userSchema);
