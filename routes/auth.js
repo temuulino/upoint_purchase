@@ -9,6 +9,16 @@ const router = express.Router();
 
 /**
  * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
+/**
+ * @swagger
  * /auth/signup:
  *   post:
  *     summary: Шинээр хэрэглэгч үүсгэх
@@ -146,6 +156,57 @@ router.post("/login", async (req, res) => {
     });
 
     res.status(200).json({ token });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (token == null) return res.sendStatus(401);
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+};
+
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Get the current user's information
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Returns the current user's information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized, token missing or invalid
+ *       403:
+ *         description: Forbidden, token no longer valid
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/me", authenticateToken, async (req, res) => {
+  try {
+    // The user's ID is stored in req.user.userId thanks to the authenticateToken middleware
+    const user = await User.findById(req.user.userId).select("-password"); // Excludes the password from the result
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
