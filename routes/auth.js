@@ -77,7 +77,7 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ message: "Username already exists" });
     }
 
-    const defaultBalance = 100;
+    const defaultBalance = 1500;
 
     const newUser = new User({
       username,
@@ -249,6 +249,105 @@ router.get("/items", authenticateToken, async (req, res) => {
     const items = await Item.find({});
     console.log(items);
     res.json(items);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+/**
+ * @swagger
+ * /auth/purchase:
+ *   post:
+ *     summary: Purchase an item
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               itemId:
+ *                 type: string
+ *                 description: The ID of the item to purchase
+ *                 example: 615d1400babc841a35c9c3ab
+ *     responses:
+ *       200:
+ *         description: Purchase successful, returns purchase details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Purchase successful
+ *                 itemPurchased:
+ *                   type: string
+ *                   example: Example Item Name
+ *                 cashbackReceived:
+ *                   type: number
+ *                   format: float
+ *                   example: 2.25
+ *                 newBalance:
+ *                   type: number
+ *                   format: float
+ *                   example: 97.75
+ *       400:
+ *         description: Bad request, such as item not found or out of stock, or insufficient balance
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Insufficient balance
+ *       401:
+ *         description: Unauthorized, token missing or invalid
+ *       404:
+ *         description: Item not found
+ *       500:
+ *         description: Internal server error
+ */
+
+router.post("/purchase", authenticateToken, async (req, res) => {
+  const { itemId } = req.body;
+
+  try {
+    const user = await User.findById(req.user.userId);
+    const item = await Item.findById(itemId);
+
+    if (!item) {
+      return res.status(404).json({ message: "Бараа олдсонгүй" });
+    }
+
+    if (item.quantity < 1) {
+      return res.status(400).json({ message: "Бараа дууссан байна" });
+    }
+
+    if (user.card.balance < item.price) {
+      return res.status(400).json({ message: "Үлдэгдэл хүрэлцэхгүй байна." });
+    }
+
+    const cashback = item.price * 0.03; // 3% cashback
+    user.card.balance -= item.price;
+    user.card.balance += cashback;
+
+    item.quantity -= 1;
+
+    await user.save();
+    await item.save();
+
+    res.json({
+      message: "Худалдан авалт амжилттай",
+      itemPurchased: item.name,
+      cashbackReceived: cashback,
+      newBalance: user.card.balance,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
